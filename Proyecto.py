@@ -18,8 +18,8 @@ Curacion = Bonus("Pasivo","Curacion","💊",+10)
 
 
 class Personaje():
-    def __init__(self, nombre, avatar):
-        self.nombre = nombre
+    def __init__(self, nombre_personaje, avatar):
+        self.nombre_personaje = nombre_personaje
         self.avatar = avatar
     
     def mostrar_presentacion(self):
