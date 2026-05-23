@@ -11,6 +11,6 @@ class hijo(padre):
         super().hola()
         print("Hola, soy la clase hijo")
 
-objeto = padre("Esteban")
-objeto2 = hijo()
-objeto2.hola()
+
+hi
+
