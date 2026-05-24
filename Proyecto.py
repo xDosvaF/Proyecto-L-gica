@@ -1,5 +1,7 @@
 import random
 import time
+import os
+
 class Personaje():
     def __init__(self, _nombre_personaje, _avatar, _vida, _eleccion):
         self.nombre_personaje = _nombre_personaje
@@ -23,6 +25,7 @@ class CadenaDeCarga:
         self.cadena = _cadena
         self.caracter = _caracter
         self.b = _b
+
     def mostrar_progreso(self):
         for i in range(100):
             if(i % 2 == 0):
@@ -46,7 +49,7 @@ class InterfazJuego:
         print(ia)
         print(victoria)
 
-barraProgreso = CadenaDeCarga("-"*50,"#",0)
+barraProgreso = CadenaDeCarga("-" * 50,"#",0)
 nombre = input("Escribe tu nombre: ")
 jugador = Personaje(nombre,"🫩",100,0)
 ia = Personaje("IA","🤖",100,0)
@@ -54,9 +57,12 @@ interfaz = InterfazJuego()
 
 while True:
     barraProgreso.mostrar_progreso()
+    print("\n")
     interfaz.mostrar_pantalla()
     opcion_jugador = int(input("Elige una opcion: "))
     opcion_ia = random.randint(1,3)
+
+    os.system('clear')
 
     jugador.eleccion_metodo(opcion_jugador)
     ia.eleccion_metodo(opcion_ia)
