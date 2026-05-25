@@ -35,15 +35,15 @@ class Personaje:
         if self.bonus == None:
             return daño
         if self.bonus.tipo == "daño_extra_x5":
-            daño = daño * 5
+            daño *= 5
         elif self.bonus.tipo == "daño_extra_x2":
-            daño = daño * 2
+            daño *=  2
         elif self.bonus.tipo == "inmunidad":
             daño = 0
         elif self.bonus.tipo == "resistencia":
             daño = daño // 2
         elif self.bonus.tipo == "ataque":
-            daño = daño + 3
+            daño += 3
         elif self.bonus.tipo == "curacion":
             self.vida = min(self.vida + 10, 100)
         return daño
@@ -52,14 +52,14 @@ class Personaje:
 class InterfazJuego:
     def mostrar_pantalla(self):
         os.system("clear")
-        print("=== PIEDRA PAPEL TIJERA ===")
+        print("PIEDRA PAPEL TIJERA: ")
         print("1. ✌️  Tijera")
         print("2. 🗞️  Papel")
         print("3. ✊  Piedra")
 
     def mostrar_resultado(self, jugador, ia, mensaje):
         os.system("clear")
-        print("=== RESULTADO ===")
+        print("Resultados de la ronda: ")
         jugador.mostrar_informacion()
         ia.mostrar_informacion()
         print(mensaje)
