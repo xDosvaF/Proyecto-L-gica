@@ -1,97 +1,164 @@
 import random
 import time
 import os
+import json
 
-class Personaje():
-    def __init__(self, _nombre_personaje, _avatar, _vida, _eleccion):
-        self.nombre_personaje = _nombre_personaje
-        self.avatar = _avatar
-        self.vida = _vida
-        self.eleccion = _eleccion
-    def mostrar_personaje(self):
-        return f"{self.nombre_personaje}:{self.avatar} | eleccion: {self.eleccion} | vida: {self.vida}"
-    def eleccion_metodo(self,opcion):
-        if opcion == 1:
-            self.eleccion = "✂️"
-        elif opcion == 2:
-            self.eleccion = "🗞️"
-        elif opcion == 3:
-            self.eleccion = "🪨"
 
-class CadenaDeCarga:
-    def __init__(self, _cadena,_caracter,_b):
-        self.cadena = _cadena
-        self.caracter = _caracter
-        self.b = _b
+class Bonus:
+    def __init__(self, nombre, emoji, tipo, valor):
+        self.nombre = nombre
+        self.emoji = emoji
+        self.tipo = tipo
+        self.valor = valor
 
-    def mostrar_progreso(self):
-        for i in range(100):
-            if(i % 2 == 0):
-                x = list(self.cadena)
-                x[self.b] = self.caracter
-                self.cadena = "".join(x)
-            
-            print(f"[{self.cadena}]{i+1}%",end='\r')
-            time.sleep(0.01)
+
+class Personaje:
+    def __init__(self, nombre, avatar, vida):
+        self.nombre = nombre
+        self.avatar = avatar
+        self.vida = vida
+        self.eleccion = "➖"
+        self.bonus = None
+
+    def mostrar_informacion(self):
+        bonus_texto = self.bonus.emoji + " " + self.bonus.nombre if self.bonus else "Ninguno"
+        print(self.nombre, self.avatar, "| Eleccion:", self.eleccion, "| Bonus:", bonus_texto, "| Vida:", self.vida)
+
+    def realizar_eleccion(self, opcion):
+        opciones = {1: "✌️", 2: "🗞️", 3: "✊"}
+        if opcion in opciones:
+            self.eleccion = opciones[opcion]
+        else:
+            print("Opcion no valida")
+
+    def aplicar_bonus(self, daño):
+        if self.bonus == None:
+            return daño
+        if self.bonus.tipo == "daño_extra_x5":
+            daño = daño * 5
+        elif self.bonus.tipo == "daño_extra_x2":
+            daño = daño * 2
+        elif self.bonus.tipo == "inmunidad":
+            daño = 0
+        elif self.bonus.tipo == "resistencia":
+            daño = daño // 2
+        elif self.bonus.tipo == "ataque":
+            daño = daño + 3
+        elif self.bonus.tipo == "curacion":
+            self.vida = min(self.vida + 10, 100)
+        return daño
+
 
 class InterfazJuego:
     def mostrar_pantalla(self):
-        print("Opciones a Elegir:")
-        print("1. ✂️")    
-        print("2. 🗞️")      
-        print("3. 🪨")
-
-    def mostrar_resultado(self,personaje,ia,victoria):
         os.system("clear")
-        print("Los resultado son:")
-        print(personaje)
-        time.sleep(1)
-        print(ia)
-        time.sleep(1)
-        print(victoria)
-        time.sleep(3)
+        print("=== PIEDRA PAPEL TIJERA ===")
+        print("1. ✌️  Tijera")
+        print("2. 🗞️  Papel")
+        print("3. ✊  Piedra")
+
+    def mostrar_resultado(self, jugador, ia, mensaje):
+        os.system("clear")
+        print("=== RESULTADO ===")
+        jugador.mostrar_informacion()
+        ia.mostrar_informacion()
+        print(mensaje)
+        for i in range(50):
+            print("[" + "#" * (i+1) + "-" * (49-i) + "]", end="\r")
+            time.sleep(0.05)
+        print()
+        time.sleep(2)
         os.system("clear")
 
-barraProgreso = CadenaDeCarga("-" * 50,"#",0)
+
+def bonus_aleatorio():
+    lista_bonus = [
+        Bonus("Daño x5",     "🧨", "daño_extra_x5", 5),
+        Bonus("Daño x2",     "🔥", "daño_extra_x2", 2),
+        Bonus("Escudo",      "🛡️", "inmunidad",     0),
+        Bonus("Resistencia", "❤️‍🩹", "resistencia",  0),
+        Bonus("Ataque",      "⚔️", "ataque",        3),
+        Bonus("Curacion",    "🌡️", "curacion",      10),
+        Bonus("Ninguno",     "➖", "ninguno",       0),
+        Bonus("Ninguno",     "➖", "ninguno",       0),
+        Bonus("Ninguno",     "➖", "ninguno",       0),
+    ]
+    return random.choice(lista_bonus)
+
+
+def guardar_estado(jugador, ia, ronda):
+    datos = {"ronda": ronda, "jugador_nombre": jugador.nombre, "jugador_vida": jugador.vida, "ia_vida": ia.vida}
+    archivo = open("estado_juego.json", "w")
+    json.dump(datos, archivo)
+    archivo.close()
+
+
+def cargar_estado():
+    if os.path.exists("estado_juego.json"):
+        archivo = open("estado_juego.json", "r")
+        datos = json.load(archivo)
+        archivo.close()
+        return datos
+    return None
+
+
 nombre = input("Escribe tu nombre: ")
-jugador = Personaje(nombre,"🫩",100,0)
-ia = Personaje("IA","🤖",100,0)
+jugador = Personaje(nombre, "🫩", 100)
+ia = Personaje("IA", "🤖", 100)
 interfaz = InterfazJuego()
+ronda = 1
 
-while True:
+datos_guardados = cargar_estado()
+if datos_guardados != None:
+    print("Partida guardada encontrada - Ronda", datos_guardados["ronda"])
+    print(datos_guardados["jugador_nombre"], "vida:", datos_guardados["jugador_vida"], "| IA vida:", datos_guardados["ia_vida"])
+    respuesta = input("Deseas continuar? (s/n): ")
+    if respuesta == "s":
+        jugador.vida = datos_guardados["jugador_vida"]
+        ia.vida = datos_guardados["ia_vida"]
+        ronda = datos_guardados["ronda"]
 
+while jugador.vida > 0 and ia.vida > 0:
     interfaz.mostrar_pantalla()
-    opcion_jugador = int(input("Elige una opcion: "))
-    opcion_ia = random.randint(1,3)
 
-    jugador.eleccion_metodo(opcion_jugador)
-    ia.eleccion_metodo(opcion_ia)
+    try:
+        opcion_jugador = int(input("Elige una opcion: "))
+    except ValueError:
+        print("Debes escribir un numero")
+        time.sleep(1)
+        continue
 
-    if (opcion_jugador == opcion_ia):
-        interfaz.mostrar_resultado(jugador.mostrar_personaje(),ia.mostrar_personaje(), "EMPATE!")
+    opcion_ia = random.randint(1, 3)
+    jugador.realizar_eleccion(opcion_jugador)
+    ia.realizar_eleccion(opcion_ia)
+    jugador.bonus = bonus_aleatorio()
+    ia.bonus = bonus_aleatorio()
 
-    elif opcion_jugador == 1:
-        if opcion_ia == 2:
-            interfaz.mostrar_resultado(jugador.mostrar_personaje(),ia.mostrar_personaje(), "Ha ganado el jugador")
-            ia.vida -= 10
-        elif opcion_ia == 3:
-            interfaz.mostrar_resultado(jugador.mostrar_personaje(),ia.mostrar_personaje(), "Ha ganado la IA")
-            jugador.vida -= 10
-    elif opcion_jugador == 2:
-        if opcion_ia == 1:
-            interfaz.mostrar_resultado(jugador.mostrar_personaje(),ia.mostrar_personaje(), "Ha ganado la IA")
-            jugador.vida -= 10
-        elif opcion_ia == 3:
-            interfaz.mostrar_resultado(jugador.mostrar_personaje(),ia.mostrar_personaje(), "Ha ganado el jugador")
-            ia.vida -= 10
-    elif opcion_jugador == 3:
-        if opcion_ia == 1:
-            interfaz.mostrar_resultado(jugador.mostrar_personaje(),ia.mostrar_personaje(), "Ha ganado el jugador")
-            ia.vida -= 10
-        elif opcion_ia == 2:
-            interfaz.mostrar_resultado(jugador.mostrar_personaje(),ia.mostrar_personaje(), "Ha ganado la IA")
-            jugador.vida -= 10
-    else:
-        print("Opción no válida!")
+    daño_base = 10
+    mensaje = ""
+    gana_jugador = (opcion_jugador == 1 and opcion_ia == 2) or (opcion_jugador == 2 and opcion_ia == 3) or (opcion_jugador == 3 and opcion_ia == 1)
+    gana_ia = (opcion_jugador == 1 and opcion_ia == 3) or (opcion_jugador == 2 and opcion_ia == 1) or (opcion_jugador == 3 and opcion_ia == 2)
 
+    if opcion_jugador == opcion_ia:
+        mensaje = "EMPATE!"
+    elif gana_jugador:
+        daño = ia.aplicar_bonus(daño_base)
+        ia.vida = max(ia.vida - daño, 0)
+        mensaje = f"Gano {jugador.nombre}! IA recibió {daño} daño"
+    elif gana_ia:
+        daño = jugador.aplicar_bonus(daño_base)
+        jugador.vida = max(jugador.vida - daño, 0)
+        mensaje = f"Gano la IA! {jugador.nombre} recibió {daño} daño"
 
+    interfaz.mostrar_resultado(jugador, ia, mensaje)
+    guardar_estado(jugador, ia, ronda)
+    ronda = ronda + 1
+
+print("FIN DEL JUEGO")
+if jugador.vida <= 0:
+    print("Gano la IA!")
+else:
+    print(f"Gano {jugador.nombre}!")
+
+if os.path.exists("estado_juego.json"):
+    os.remove("estado_juego.json")
